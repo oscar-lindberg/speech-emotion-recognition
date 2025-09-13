@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "speechEmotionRecognition"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+  "torch",
+  "numpy",
+  "pandas",
+  "pyyaml",
+  "tqdm",
+  "librosa>=0.9",
+  "soundfile",
+  "scipy",
+  "transformers",
+]
+
+# Optional extras you can install as: pip install .[metrics], .[viz], or .[dev]
+[project.optional-dependencies]
+metrics = ["scikit-learn>=1.0"]  # nicer reports (train.py falls back if absent)
+viz     = ["matplotlib>=3.5"]  # for visualization scripts
+dev     = ["pytest>=7", "scikit-learn>=1.0", "matplotlib>=3.5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+ser = "speechEmotionRecognition.main:main"
