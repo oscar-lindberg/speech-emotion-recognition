@@ -1,0 +1,178 @@
+# =========================
+# Project and runtime
+# =========================
+device: auto
+seed: 99
+
+project:
+  data_dir: data
+  raw_data_dir: data/raw
+  processed_data_dir: data/processed
+  metadata_csv: data/processed/metadata.csv
+  features_dir: data/processed/features
+  features_metadata_csv: data/processed/features/features_metadata.csv
+  splits_dir: data/processed/splits
+  train_csv: data/processed/splits/train.csv
+  val_csv: data/processed/splits/val.csv
+  test_csv: data/processed/splits/test.csv
+  run_dir: runs
+
+# =========================
+# Datasets to extract
+# =========================
+extract:
+  datasets: ["crema","ravdess","savee","tess"]
+
+# =========================
+# Label space and maps
+# =========================
+emotion_labels:
+  angry: 0
+  disgust: 1
+  fear: 2
+  happy: 3
+  neutral: 4
+  sad: 5
+
+emotion_maps:
+  crema:
+    ANG: angry
+    DIS: disgust
+    FEA: fear
+    HAP: happy
+    NEU: neutral
+    SAD: sad
+  ravdess:
+    "01": neutral
+    "02": neutral  # calm -> neutral
+    "03": happy
+    "04": sad
+    "05": angry
+    "06": fear
+    "07": disgust
+    "08": surprise
+  savee:
+    a: angry
+    d: disgust
+    f: fear
+    h: happy
+    sa: sad
+    su: surprise
+  tess:
+    angry: angry
+    disgust: disgust
+    fear: fear
+    happy: happy
+    neutral: neutral
+    sad: sad
+    surprise: surprise
+    surprised: surprise
+    ps: surprise
+
+# =========================
+# Split
+# =========================
+split:
+  included_datasets: ["crema","ravdess","savee","tess"]
+  cross_dataset: false
+  train_datasets: ["crema","ravdess","savee"]  # used iff cross_dataset=true
+  test_datasets: ["tess"]  # used iff cross_dataset=true
+  group_by: speaker  # speaker | speaker+dataset | sample | none
+  val_size: 0.10
+  test_size: 0.15
+  strict_required_features: true
+  use_augmented_train: true
+  use_augmented_val: false
+
+# =========================
+# Audio
+# =========================
+audio:
+  sampling_rate: 16000
+  duration: 3.0
+  trim_silence:
+    enabled: true
+    top_db: 20
+
+# =========================
+# Features
+# =========================
+features:
+  types: ["mel", "mfcc"]  # "mel", "mfcc", "chroma"; features to compute/store
+  augmented_types: ["mel", "mfcc"]  # computed for augmented audio too
+  normalize:
+    mel: true
+    mfcc: true
+    chroma: false
+  skip_existing: false
+
+  stft:
+    n_fft: 400
+    hop_length: 160
+    win_length: 400
+    window: hann
+
+  mel:
+    n_mels: 128
+
+  mfcc:
+    n_mfcc: 40
+    lifter: 0
+    dct_type: 2
+
+# =========================
+# Audio augmentations (offline)
+# =========================
+augmentations:
+  enabled: true
+  copies: 1
+  noise:        { enabled: true, prob: 0.3, factor: 0.002 }
+  time_shift:   { enabled: true, prob: 0.3, max: 0.2 }
+  pitch_shift:  { enabled: true, prob: 0.3, range: [-2, 2] }
+  time_stretch: { enabled: true, prob: 0.3, range: [0.9, 1.1] }
+
+# =========================
+# SpecAugment (online)
+# =========================
+specaugment:
+  enabled: true
+  freq_mask: { num: 2, param: 20 }
+  time_mask: { num: 2, param: 30 }
+
+# =========================
+# Model
+# =========================
+model:
+  name: spectral_crnn
+  features: ["mel", "mfcc"]  # order must match stored features
+  spectral_crnn:
+    branch_out_dim: 128
+    rnn_hidden_size: 128
+    rnn_layers: 1
+    cnn_dropout: 0.2
+    fusion_dropout: 0.2
+    dropout: 0.4
+
+# =========================
+# Training
+# =========================
+train:
+  epochs: 50
+  batch_size: 32
+  learning_rate: 1e-4
+  weight_decay: 1e-5
+  optimizer: adamw
+  scheduler: cosine  # "cosine" | "none" | "plateau"
+
+  val_metric: uar
+  early_stopping_patience: 6
+
+  amp: true
+  grad_clip: 1.0
+  num_workers: 2
+
+  class_weighted_loss: false
+  class_balancing: none  # "none" | "effective"
+  loss: ce  # "ce" | "focal"
+  label_smoothing: 0.05  # 0.0–0.1 typical
+  use_weighted_sampler: false
